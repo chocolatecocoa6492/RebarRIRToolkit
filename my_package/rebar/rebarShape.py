@@ -231,8 +231,38 @@ class RebarShapeCurve:
         base_line3 = rg.Line(toPt2,toPt3)
         return [base_line,base_line2,base_line3]
 
-        
+    def _generate_angled_h_line(self, a, b, c):
+        # 中央に水平な部分があり、その両端から60度の角度で下向きに伸びる鉄筋形状を生成します。
+        # a: 中央の水平部分の長さ
+        # b: 左側の斜め部分の長さ
+        # c: 右側の斜め部分の長さ
 
+        # 水平部分の開始点（左側の斜め部分の終点）を原点とします。
+        P_start_horizontal = rg.Point3d(0, 0, 0)
+        # 水平部分の終点（右側の斜め部分の開始点）
+        P_end_horizontal = rg.Point3d(a, 0, 0)
+
+        # 左側の斜め部分の終点を計算します。
+        # 水平から下向きに60度なので、X軸正方向からの角度は 180 + 60 = 240度 です。
+        angle_rad_left = math.radians(240)
+        P_end_left_angled_x = P_start_horizontal.X + b * math.cos(angle_rad_left)
+        P_end_left_angled_y = P_start_horizontal.Y + b * math.sin(angle_rad_left)
+        P_end_left_angled = rg.Point3d(P_end_left_angled_x, P_end_left_angled_y, 0)
+
+        # 右側の斜め部分の終点を計算します。
+        # 水平から下向きに60度なので、X軸正方向からの角度は 360 - 60 = 300度 です。
+        angle_rad_right = math.radians(300)
+        P_end_right_angled_x = P_end_horizontal.X + c * math.cos(angle_rad_right)
+        P_end_right_angled_y = P_end_horizontal.Y + c * math.sin(angle_rad_right)
+        P_end_right_angled = rg.Point3d(P_end_right_angled_x, P_end_right_angled_y, 0)
+
+        # 各セグメントの線分を作成します。
+        # 連続性を保つため、左端から右端へ向かう順序で線分を定義します。
+        line1 = rg.Line(P_end_left_angled, P_start_horizontal) # 左側の斜め部分
+        line2 = rg.Line(P_start_horizontal, P_end_horizontal)   # 中央の水平部分
+        line3 = rg.Line(P_end_horizontal, P_end_right_angled)   # 右側の斜め部分
+
+        return [line1, line2, line3]
 
     def _create_rebarShapeCurve_in_rhino(self):
 
@@ -278,6 +308,8 @@ class RebarShapeCurve:
             base_line = self._generate_s_line(self.c,self.e,self.a,self.x)
         elif self.rh_name=="rg21":
             base_line = self._generate_u_angled_line(self.a,self.b,self.c)
+        elif self.rh_name=="rg22": # 添付画像の形状に対応する新しい条件
+            base_line = self._generate_angled_h_line(self.a, self.b, self.c)
        
         lines = []
 
